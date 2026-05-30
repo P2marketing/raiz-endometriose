@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="112" fill="#fffcf8"/>
+  <circle cx="256" cy="256" r="202" fill="#f7efff"/>
+  <path d="M252 118c74 58 111 122 111 192 0 56-45 101-101 101s-101-45-101-101c0-70 30-134 91-192Z" fill="#6133b5"/>
+  <path d="M263 177c42 42 62 85 62 128 0 34-27 61-61 61s-61-27-61-61c0-44 20-86 60-128Z" fill="#ffffff" opacity=".92"/>
+  <path d="M304 137c36-23 70-30 102-21-1 37-16 67-44 91-27 23-59 32-96 27 0-40 13-72 38-97Z" fill="#22a872"/>
+  <path d="M338 160c22-13 42-18 60-14-3 20-12 37-29 50-15 12-33 18-54 18 2-22 9-40 23-54Z" fill="#fffcf8" opacity=".75"/>
+  <text x="256" y="462" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="62" font-weight="700" letter-spacing="8" fill="#6133b5">RAIZ</text>
+</svg>
