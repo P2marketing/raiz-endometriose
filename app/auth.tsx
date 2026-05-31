@@ -1,7 +1,7 @@
 import { router } from "expo-router";
 import { LockKeyhole, LogIn, UserPlus } from "lucide-react-native";
 import { useState } from "react";
-import { Alert, StyleSheet, TextInput, View } from "react-native";
+import { StyleSheet, TextInput, View } from "react-native";
 
 import { AppText } from "@/components/AppText";
 import { Card } from "@/components/Card";
@@ -20,21 +20,32 @@ export default function AuthScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [feedback, setFeedback] = useState<{ tone: "error" | "success"; message: string } | null>(null);
 
   const submit = async () => {
     if (!email || !password || (mode === "Criar conta" && !name)) {
-      Alert.alert("Dados incompletos", "Preencha os campos para continuar.");
+      setFeedback({ tone: "error", message: "Preencha os campos para continuar." });
       return;
     }
     setLoading(true);
-    const error =
+    setFeedback(null);
+    const result =
       mode === "Entrar"
         ? await signIn(email.trim(), password)
         : await signUp(name.trim(), email.trim(), password);
     setLoading(false);
 
-    if (error) {
-      Alert.alert("Não foi possível continuar", translateAuthError(error));
+    if (result.error) {
+      setFeedback({ tone: "error", message: translateAuthError(result.error) });
+      return;
+    }
+
+    if (result.needsEmailConfirmation) {
+      setFeedback({
+        tone: "success",
+        message: result.message ?? "Conta criada. Confirme seu e-mail antes de entrar."
+      });
+      setMode("Entrar");
       return;
     }
 
@@ -87,8 +98,18 @@ export default function AuthScreen() {
       <PrimaryButton
         label={loading ? "Aguarde..." : mode}
         icon={mode === "Entrar" ? LogIn : UserPlus}
+        disabled={loading}
         onPress={submit}
       />
+
+      {feedback ? (
+        <View style={[styles.feedback, feedback.tone === "error" ? styles.feedbackError : styles.feedbackSuccess]}>
+          <AppText variant="label" color={feedback.tone === "error" ? colors.danger : colors.green}>
+            {feedback.tone === "error" ? "Atenção" : "Tudo certo"}
+          </AppText>
+          <AppText color={colors.muted}>{feedback.message}</AppText>
+        </View>
+      ) : null}
 
       <Card tone="soft">
         <View style={styles.securityRow}>
@@ -104,8 +125,13 @@ export default function AuthScreen() {
 }
 
 function translateAuthError(error: string) {
-  if (error.toLowerCase().includes("invalid")) return "E-mail ou senha inválidos.";
-  if (error.toLowerCase().includes("password")) return "A senha precisa atender aos requisitos mínimos.";
+  const normalized = error.toLowerCase();
+  if (normalized.includes("invalid login credentials")) return "E-mail ou senha inválidos. Se acabou de criar a conta, confirme o e-mail primeiro.";
+  if (normalized.includes("email not confirmed")) return "Confirme seu e-mail antes de entrar.";
+  if (normalized.includes("email rate limit") || normalized.includes("rate limit")) return "Muitas tentativas de cadastro agora. Aguarde alguns minutos e tente novamente.";
+  if (normalized.includes("signup disabled")) return "O cadastro está desativado no momento.";
+  if (normalized.includes("invalid")) return "E-mail ou senha inválidos.";
+  if (normalized.includes("password")) return "A senha precisa ter pelo menos 6 caracteres e atender aos requisitos do cadastro.";
   if (error.toLowerCase().includes("already")) return "Esse e-mail já possui cadastro.";
   return error;
 }
@@ -136,6 +162,20 @@ const styles = StyleSheet.create({
     marginTop: spacing.md,
     minHeight: 52,
     paddingHorizontal: spacing.md
+  },
+  feedback: {
+    borderRadius: radii.md,
+    borderWidth: 1,
+    gap: spacing.xs,
+    padding: spacing.md
+  },
+  feedbackError: {
+    backgroundColor: "#FFF5F5",
+    borderColor: "#F4B4B4"
+  },
+  feedbackSuccess: {
+    backgroundColor: "#F4FBF6",
+    borderColor: "#BFE9C7"
   },
   securityRow: {
     alignItems: "center",

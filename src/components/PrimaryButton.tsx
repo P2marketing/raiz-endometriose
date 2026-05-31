@@ -8,14 +8,17 @@ type Props = {
   label: string;
   icon?: LucideIcon;
   onPress: () => void;
+  disabled?: boolean;
 };
 
-export function PrimaryButton({ label, icon: Icon, onPress }: Props) {
+export function PrimaryButton({ label, icon: Icon, onPress, disabled = false }: Props) {
   return (
     <Pressable
+      accessibilityState={{ disabled }}
       accessibilityRole="button"
+      disabled={disabled}
       onPress={onPress}
-      style={({ pressed }) => [styles.button, pressed && styles.pressed]}
+      style={({ pressed }) => [styles.button, pressed && !disabled && styles.pressed, disabled && styles.disabled]}
     >
       {Icon ? <Icon color="#FFFFFF" size={20} strokeWidth={2.4} /> : null}
       <AppText variant="label" color="#FFFFFF">
@@ -39,5 +42,8 @@ const styles = StyleSheet.create({
   pressed: {
     backgroundColor: colors.primaryDark,
     transform: [{ scale: 0.99 }]
+  },
+  disabled: {
+    opacity: 0.65
   }
 });
