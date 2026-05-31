@@ -58,31 +58,19 @@ export function AuthProvider({ children }: PropsWithChildren) {
       },
       signUp: async (name, email, password) => {
         if (!supabase) return { error: "Supabase não configurado." };
-        const { data, error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: { name },
-            emailRedirectTo: getAuthRedirectUrl()
+        const { data, error } = await supabase.functions.invoke<{ error?: string; ok?: boolean }>("create-account", {
+          body: {
+            email,
+            name,
+            password,
+            redirectTo: getAuthRedirectUrl()
           }
         });
         if (error) return { error: error.message };
+        if (data?.error) return { error: data.error };
 
-        if (data.session && data.user) {
-          await supabase.from("profiles").upsert({
-            user_id: data.user.id,
-            name
-          });
-        }
-
-        if (!data.session) {
-          return {
-            needsEmailConfirmation: true,
-            message: "Conta criada. Confira seu e-mail e confirme o cadastro antes de entrar."
-          };
-        }
-
-        return {};
+        const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+        return signInError ? { error: signInError.message } : {};
       },
       signOut: async () => {
         if (supabase) await supabase.auth.signOut();
