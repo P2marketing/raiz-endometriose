@@ -123,7 +123,7 @@ export default function RegisterScreen() {
           <Pressable
             accessibilityLabel="Abrir configurações"
             accessibilityRole="button"
-            onPress={() => router.push("/lembretes")}
+            onPress={() => router.push("/configuracoes")}
             style={({ pressed }) => [styles.settingsButton, pressed && styles.pressed]}
           >
             <Settings color={colors.primary} size={22} />
@@ -136,12 +136,12 @@ export default function RegisterScreen() {
             <View style={styles.configText}>
               <AppText variant="label">Configurações rápidas</AppText>
               <AppText variant="caption" color={colors.muted}>
-                Ajuste lembretes, ciclo e privacidade do seu RAIZ.
+                Ajuste lembretes, ciclo, visual e privacidade do seu RAIZ.
               </AppText>
             </View>
           </View>
           <View style={styles.configActions}>
-            <ConfigButton icon={Bell} label="Lembretes" onPress={() => router.push("/lembretes")} />
+            <ConfigButton icon={Bell} label="App" onPress={() => router.push("/configuracoes")} />
             <ConfigButton icon={CalendarDays} label="Ciclo" onPress={() => router.push("/plano")} />
             <ConfigButton icon={ShieldCheck} label="Privacidade" onPress={() => router.push("/cuidado")} />
           </View>

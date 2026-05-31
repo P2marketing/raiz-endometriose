@@ -1,7 +1,6 @@
 import { router, useFocusEffect } from "expo-router";
 import {
   BatteryMedium,
-  Bell,
   Brain,
   CalendarDays,
   ChevronRight,
@@ -11,7 +10,7 @@ import {
   HeartPulse,
   Lightbulb,
   Plus,
-  Sparkles,
+  Settings,
   Zap
 } from "lucide-react-native";
 import { useCallback, useMemo, useState } from "react";
@@ -22,7 +21,7 @@ import { Card } from "@/components/Card";
 import { Screen } from "@/components/Screen";
 import { daysBetween, todayKey } from "@/lib/dates";
 import { buildInsight, getRiskColor } from "@/lib/insights";
-import { buildInAppNotifications, InAppNotification } from "@/lib/notifications";
+import { buildInAppNotifications } from "@/lib/notifications";
 import { getEntries, getProfile } from "@/lib/storage";
 import { summarize } from "@/lib/stats";
 import { DailyEntry, DailyInsight, UserProfile } from "@/types";
@@ -55,6 +54,7 @@ export default function TodayScreen() {
   const inflammation = getInflammationLabel(latest);
   const nextStep = getNextStep(latest, insight);
   const notifications = useMemo(() => buildInAppNotifications(entries, profile), [entries, profile]);
+  const priorityNotification = notifications[0];
 
   return (
     <Screen>
@@ -69,13 +69,12 @@ export default function TodayScreen() {
           </AppText>
         </View>
         <Pressable
-          accessibilityLabel="Abrir lembretes"
+          accessibilityLabel="Abrir configurações"
           accessibilityRole="button"
-          onPress={() => router.push("/lembretes")}
+          onPress={() => router.push("/configuracoes")}
           style={({ pressed }) => [styles.iconButton, pressed && styles.pressed]}
         >
-          <Bell color={colors.ink} size={24} />
-          <View style={styles.notificationDot} />
+          <Settings color={colors.primary} size={23} />
         </Pressable>
       </View>
 
@@ -98,28 +97,29 @@ export default function TodayScreen() {
         </Pressable>
       </View>
 
-      <Card style={styles.notificationPanel}>
-        <View style={styles.notificationHeader}>
-          <View style={styles.notificationTitle}>
-            <Sparkles color={colors.rose} size={22} />
-            <AppText variant="subtitle">Notificações RAIZ</AppText>
-          </View>
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => router.push("/lembretes")}
-            style={({ pressed }) => [styles.tinyButton, pressed && styles.pressed]}
-          >
-            <AppText variant="caption" color={colors.primary}>
-              Configurar
-            </AppText>
-          </Pressable>
-        </View>
-        <View style={styles.notificationList}>
-          {notifications.map((item) => (
-            <NotificationItem key={item.id} item={item} />
-          ))}
-        </View>
-      </Card>
+      {priorityNotification ? (
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => router.push(priorityNotification.route)}
+          style={({ pressed }) => [pressed && styles.pressed]}
+        >
+          <Card style={styles.todayPrompt}>
+            <View style={styles.promptIcon}>
+              <HeartPulse color={colors.rose} size={22} />
+            </View>
+            <View style={styles.promptText}>
+              <AppText variant="caption" color={colors.primary}>
+                Para hoje
+              </AppText>
+              <AppText variant="label">{priorityNotification.title}</AppText>
+              <AppText variant="caption" color={colors.muted}>
+                {priorityNotification.text}
+              </AppText>
+            </View>
+            <ChevronRight color={colors.primary} size={22} />
+          </Card>
+        </Pressable>
+      ) : null}
 
       <Card style={styles.stateCard}>
         <View style={styles.cardHeader}>
@@ -268,36 +268,6 @@ export default function TodayScreen() {
       </Pressable>
     </Screen>
   );
-}
-
-function NotificationItem({ item }: { item: InAppNotification }) {
-  return (
-    <Pressable
-      accessibilityRole="button"
-      onPress={() => router.push(item.route)}
-      style={({ pressed }) => [styles.notificationItem, getNotificationStyle(item.tone), pressed && styles.pressed]}
-    >
-      <View style={styles.notificationCopy}>
-        <AppText variant="label">{item.title}</AppText>
-        <AppText variant="caption" color={colors.muted}>
-          {item.text}
-        </AppText>
-      </View>
-      <View style={styles.notificationAction}>
-        <AppText variant="caption" color={colors.primary}>
-          {item.actionLabel}
-        </AppText>
-        <ChevronRight color={colors.primary} size={16} />
-      </View>
-    </Pressable>
-  );
-}
-
-function getNotificationStyle(tone: InAppNotification["tone"]) {
-  if (tone === "care") return styles.toneCare;
-  if (tone === "insight") return styles.toneInsight;
-  if (tone === "risk") return styles.toneRisk;
-  return styles.toneReminder;
 }
 
 function StateMetric({
@@ -453,18 +423,13 @@ const styles = StyleSheet.create({
   },
   iconButton: {
     alignItems: "center",
+    backgroundColor: colors.lavender,
+    borderColor: colors.border,
+    borderRadius: 18,
+    borderWidth: 1,
     height: 48,
     justifyContent: "center",
     width: 48
-  },
-  notificationDot: {
-    backgroundColor: colors.danger,
-    borderRadius: 4,
-    height: 8,
-    position: "absolute",
-    right: 9,
-    top: 9,
-    width: 8
   },
   hero: {
     alignItems: "center",
@@ -482,56 +447,23 @@ const styles = StyleSheet.create({
     minHeight: 48,
     paddingHorizontal: spacing.lg
   },
-  notificationPanel: {
-    gap: spacing.md
-  },
-  notificationHeader: {
+  todayPrompt: {
     alignItems: "center",
     flexDirection: "row",
-    justifyContent: "space-between"
-  },
-  notificationTitle: {
-    alignItems: "center",
-    flexDirection: "row",
-    gap: spacing.sm
-  },
-  tinyButton: {
-    backgroundColor: colors.lavender,
-    borderRadius: 16,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm
-  },
-  notificationList: {
-    gap: spacing.sm
-  },
-  notificationItem: {
-    borderColor: colors.border,
-    borderRadius: 16,
-    borderWidth: 1,
     gap: spacing.sm,
-    padding: spacing.md
+    paddingVertical: spacing.md
   },
-  notificationCopy: {
-    gap: spacing.xs
-  },
-  notificationAction: {
+  promptIcon: {
     alignItems: "center",
-    alignSelf: "flex-start",
-    flexDirection: "row",
-    gap: spacing.xs
+    backgroundColor: "#FFF1F7",
+    borderRadius: 20,
+    height: 40,
+    justifyContent: "center",
+    width: 40
   },
-  toneCare: {
-    backgroundColor: "#FFF7FA"
-  },
-  toneInsight: {
-    backgroundColor: colors.lavender
-  },
-  toneReminder: {
-    backgroundColor: "#FFF1F6"
-  },
-  toneRisk: {
-    backgroundColor: "#FFF0F2",
-    borderColor: "#F4BCC8"
+  promptText: {
+    flex: 1,
+    gap: 2
   },
   stateCard: {
     gap: spacing.lg
