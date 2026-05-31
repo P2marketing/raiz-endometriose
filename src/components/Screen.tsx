@@ -33,7 +33,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.lg,
-    paddingBottom: 132
+    paddingBottom: 168
   },
   mobileFrame: {
     alignSelf: "center",
@@ -46,6 +46,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
     borderTopColor: colors.border,
     borderTopWidth: 1,
-    padding: spacing.lg
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: 104
   }
 });

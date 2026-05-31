@@ -14,12 +14,12 @@ export function AppText({ variant = "body", color, style, ...props }: Props) {
 const styles = StyleSheet.create({
   title: {
     fontSize: 28,
-    fontWeight: "700",
+    fontWeight: "800",
     lineHeight: 34
   },
   subtitle: {
     fontSize: 20,
-    fontWeight: "700",
+    fontWeight: "800",
     lineHeight: 26
   },
   body: {
@@ -33,6 +33,6 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     lineHeight: 18,
-    fontWeight: "700"
+    fontWeight: "800"
   }
 });

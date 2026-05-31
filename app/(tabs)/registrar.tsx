@@ -1,7 +1,7 @@
 import { router, useFocusEffect } from "expo-router";
-import { Save } from "lucide-react-native";
+import { Bell, CalendarDays, Save, Settings, ShieldCheck, Sparkles } from "lucide-react-native";
 import { useCallback, useState } from "react";
-import { Alert, Pressable, StyleSheet, TextInput, View } from "react-native";
+import { Pressable, StyleSheet, TextInput, View } from "react-native";
 
 import { AppText } from "@/components/AppText";
 import { Card } from "@/components/Card";
@@ -43,6 +43,8 @@ export default function RegisterScreen() {
   const [stressLevel, setStressLevel] = useState<StressLevel>("Moderado");
   const [selectedSymptoms, setSelectedSymptoms] = useState<Symptom[]>([]);
   const [notes, setNotes] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [feedback, setFeedback] = useState<{ tone: "error" | "success"; message: string } | null>(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -83,30 +85,88 @@ export default function RegisterScreen() {
   };
 
   const submit = async () => {
-    await saveEntry({
-      date: todayKey(),
-      painScore,
-      energyScore,
-      mood,
-      sleepQuality,
-      stressLevel,
-      symptoms: selectedSymptoms,
-      notes
-    });
-    Alert.alert("Registro salvo", "Seu check-in de hoje foi atualizado.", [
-      {
-        text: "Ver meu estado",
-        onPress: () => router.replace("/")
-      }
-    ]);
+    setSaving(true);
+    setFeedback(null);
+    try {
+      await saveEntry({
+        date: todayKey(),
+        painScore,
+        energyScore,
+        mood,
+        sleepQuality,
+        stressLevel,
+        symptoms: selectedSymptoms,
+        notes
+      });
+      setFeedback({
+        tone: "success",
+        message: "Registro de hoje salvo. Amanhã a tela começa um novo check-in."
+      });
+    } catch {
+      setFeedback({
+        tone: "error",
+        message: "Não foi possível salvar agora. Confira sua conexão e tente novamente."
+      });
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
-    <Screen footer={<PrimaryButton label="Salvar check-in" icon={Save} onPress={submit} />}>
+    <Screen footer={<PrimaryButton label={saving ? "Salvando..." : "Salvar check-in"} icon={Save} disabled={saving} onPress={submit} />}>
       <View style={styles.header}>
-        <AppText variant="title">Monitorar</AppText>
-        <AppText color={colors.muted}>Registre sinais importantes para endometriose, ciclo, dor e rotina.</AppText>
+        <View style={styles.headerTop}>
+          <View style={styles.titleBlock}>
+            <AppText variant="title">Monitorar</AppText>
+            <AppText color={colors.muted}>Registre sinais importantes para endometriose, ciclo, dor e rotina.</AppText>
+          </View>
+          <Pressable
+            accessibilityLabel="Abrir configurações"
+            accessibilityRole="button"
+            onPress={() => router.push("/lembretes")}
+            style={({ pressed }) => [styles.settingsButton, pressed && styles.pressed]}
+          >
+            <Settings color={colors.primary} size={22} />
+          </Pressable>
+        </View>
+
+        <Card style={styles.configCard}>
+          <View style={styles.configHeader}>
+            <Sparkles color={colors.rose} size={22} />
+            <View style={styles.configText}>
+              <AppText variant="label">Configurações rápidas</AppText>
+              <AppText variant="caption" color={colors.muted}>
+                Ajuste lembretes, ciclo e privacidade do seu RAIZ.
+              </AppText>
+            </View>
+          </View>
+          <View style={styles.configActions}>
+            <ConfigButton icon={Bell} label="Lembretes" onPress={() => router.push("/lembretes")} />
+            <ConfigButton icon={CalendarDays} label="Ciclo" onPress={() => router.push("/plano")} />
+            <ConfigButton icon={ShieldCheck} label="Privacidade" onPress={() => router.push("/cuidado")} />
+          </View>
+        </Card>
       </View>
+
+      {feedback ? (
+        <View style={[styles.feedback, feedback.tone === "error" ? styles.feedbackError : styles.feedbackSuccess]}>
+          <AppText variant="label" color={feedback.tone === "error" ? colors.danger : colors.green}>
+            {feedback.tone === "error" ? "Atenção" : "Registro salvo"}
+          </AppText>
+          <AppText color={colors.muted}>{feedback.message}</AppText>
+          {feedback.tone === "success" ? (
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => router.push("/")}
+              style={({ pressed }) => [styles.feedbackLink, pressed && styles.pressed]}
+            >
+              <AppText variant="label" color={colors.primary}>
+                Ver meu estado de hoje
+              </AppText>
+            </Pressable>
+          ) : null}
+        </View>
+      ) : null}
 
       <ScoreCard label="Dor" value={painScore} onChange={setPainScore} tone={colors.danger} />
       <ScoreCard label="Energia" value={energyScore} onChange={setEnergyScore} tone={colors.blue} />
@@ -173,10 +233,29 @@ export default function RegisterScreen() {
           O RAIZ salva um check-in por dia. Se você salvar novamente hoje, o registro de hoje será atualizado. Amanhã a tela começa um novo registro.
         </AppText>
         <View style={styles.inlineSave}>
-          <PrimaryButton label="Salvar registro de hoje" icon={Save} onPress={submit} />
+          <PrimaryButton label={saving ? "Salvando..." : "Salvar registro de hoje"} icon={Save} disabled={saving} onPress={submit} />
         </View>
       </Card>
     </Screen>
+  );
+}
+
+function ConfigButton({
+  icon: Icon,
+  label,
+  onPress
+}: {
+  icon: typeof Bell;
+  label: string;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable accessibilityRole="button" onPress={onPress} style={({ pressed }) => [styles.configButton, pressed && styles.pressed]}>
+      <Icon color={colors.primary} size={18} />
+      <AppText variant="caption" color={colors.primary}>
+        {label}
+      </AppText>
+    </Pressable>
   );
 }
 
@@ -224,6 +303,74 @@ function ScoreCard({
 const styles = StyleSheet.create({
   header: {
     gap: spacing.xs
+  },
+  headerTop: {
+    alignItems: "flex-start",
+    flexDirection: "row",
+    gap: spacing.md,
+    justifyContent: "space-between"
+  },
+  titleBlock: {
+    flex: 1,
+    gap: spacing.xs
+  },
+  settingsButton: {
+    alignItems: "center",
+    backgroundColor: colors.lavender,
+    borderColor: colors.border,
+    borderRadius: 18,
+    borderWidth: 1,
+    height: 44,
+    justifyContent: "center",
+    width: 44
+  },
+  configCard: {
+    gap: spacing.md,
+    marginTop: spacing.lg
+  },
+  configHeader: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: spacing.sm
+  },
+  configText: {
+    flex: 1,
+    gap: spacing.xs
+  },
+  configActions: {
+    flexDirection: "row",
+    gap: spacing.sm
+  },
+  configButton: {
+    alignItems: "center",
+    backgroundColor: "#FFF1F7",
+    borderColor: colors.border,
+    borderRadius: 16,
+    borderWidth: 1,
+    flex: 1,
+    flexDirection: "row",
+    gap: spacing.xs,
+    justifyContent: "center",
+    minHeight: 44,
+    paddingHorizontal: spacing.sm
+  },
+  feedback: {
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    gap: spacing.xs,
+    padding: spacing.md
+  },
+  feedbackError: {
+    backgroundColor: "#FFF3F5",
+    borderColor: "#F2B6C5"
+  },
+  feedbackSuccess: {
+    backgroundColor: "#F1FBF5",
+    borderColor: "#BDE8CB"
+  },
+  feedbackLink: {
+    alignSelf: "flex-start",
+    marginTop: spacing.xs
   },
   scoreHeader: {
     alignItems: "center",

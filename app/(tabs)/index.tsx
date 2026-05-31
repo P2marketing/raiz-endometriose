@@ -11,16 +11,18 @@ import {
   HeartPulse,
   Lightbulb,
   Plus,
+  Sparkles,
   Zap
 } from "lucide-react-native";
 import { useCallback, useMemo, useState } from "react";
-import { Alert, Pressable, StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 
 import { AppText } from "@/components/AppText";
 import { Card } from "@/components/Card";
 import { Screen } from "@/components/Screen";
 import { daysBetween, todayKey } from "@/lib/dates";
 import { buildInsight, getRiskColor } from "@/lib/insights";
+import { buildInAppNotifications, InAppNotification } from "@/lib/notifications";
 import { getEntries, getProfile } from "@/lib/storage";
 import { summarize } from "@/lib/stats";
 import { DailyEntry, DailyInsight, UserProfile } from "@/types";
@@ -52,6 +54,7 @@ export default function TodayScreen() {
   const riskLevel = insight?.riskLevel ?? "Médio";
   const inflammation = getInflammationLabel(latest);
   const nextStep = getNextStep(latest, insight);
+  const notifications = useMemo(() => buildInAppNotifications(entries, profile), [entries, profile]);
 
   return (
     <Screen>
@@ -78,7 +81,7 @@ export default function TodayScreen() {
 
       <View style={styles.hero}>
         <View>
-          <AppText variant="title">Olá, {profile?.name ?? "Aline"}! 👋</AppText>
+          <AppText variant="title">Olá, {profile?.name ?? "Aline"}!</AppText>
           <AppText variant="subtitle" color={colors.primary}>
             Dia {dayNumber} do seu plano RAIZ
           </AppText>
@@ -94,6 +97,29 @@ export default function TodayScreen() {
           </AppText>
         </Pressable>
       </View>
+
+      <Card style={styles.notificationPanel}>
+        <View style={styles.notificationHeader}>
+          <View style={styles.notificationTitle}>
+            <Sparkles color={colors.rose} size={22} />
+            <AppText variant="subtitle">Notificações RAIZ</AppText>
+          </View>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => router.push("/lembretes")}
+            style={({ pressed }) => [styles.tinyButton, pressed && styles.pressed]}
+          >
+            <AppText variant="caption" color={colors.primary}>
+              Configurar
+            </AppText>
+          </Pressable>
+        </View>
+        <View style={styles.notificationList}>
+          {notifications.map((item) => (
+            <NotificationItem key={item.id} item={item} />
+          ))}
+        </View>
+      </Card>
 
       <Card style={styles.stateCard}>
         <View style={styles.cardHeader}>
@@ -242,6 +268,36 @@ export default function TodayScreen() {
       </Pressable>
     </Screen>
   );
+}
+
+function NotificationItem({ item }: { item: InAppNotification }) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      onPress={() => router.push(item.route)}
+      style={({ pressed }) => [styles.notificationItem, getNotificationStyle(item.tone), pressed && styles.pressed]}
+    >
+      <View style={styles.notificationCopy}>
+        <AppText variant="label">{item.title}</AppText>
+        <AppText variant="caption" color={colors.muted}>
+          {item.text}
+        </AppText>
+      </View>
+      <View style={styles.notificationAction}>
+        <AppText variant="caption" color={colors.primary}>
+          {item.actionLabel}
+        </AppText>
+        <ChevronRight color={colors.primary} size={16} />
+      </View>
+    </Pressable>
+  );
+}
+
+function getNotificationStyle(tone: InAppNotification["tone"]) {
+  if (tone === "care") return styles.toneCare;
+  if (tone === "insight") return styles.toneInsight;
+  if (tone === "risk") return styles.toneRisk;
+  return styles.toneReminder;
 }
 
 function StateMetric({
@@ -425,6 +481,57 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     minHeight: 48,
     paddingHorizontal: spacing.lg
+  },
+  notificationPanel: {
+    gap: spacing.md
+  },
+  notificationHeader: {
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-between"
+  },
+  notificationTitle: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: spacing.sm
+  },
+  tinyButton: {
+    backgroundColor: colors.lavender,
+    borderRadius: 16,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm
+  },
+  notificationList: {
+    gap: spacing.sm
+  },
+  notificationItem: {
+    borderColor: colors.border,
+    borderRadius: 16,
+    borderWidth: 1,
+    gap: spacing.sm,
+    padding: spacing.md
+  },
+  notificationCopy: {
+    gap: spacing.xs
+  },
+  notificationAction: {
+    alignItems: "center",
+    alignSelf: "flex-start",
+    flexDirection: "row",
+    gap: spacing.xs
+  },
+  toneCare: {
+    backgroundColor: "#FFF7FA"
+  },
+  toneInsight: {
+    backgroundColor: colors.lavender
+  },
+  toneReminder: {
+    backgroundColor: "#FFF1F6"
+  },
+  toneRisk: {
+    backgroundColor: "#FFF0F2",
+    borderColor: "#F4BCC8"
   },
   stateCard: {
     gap: spacing.lg

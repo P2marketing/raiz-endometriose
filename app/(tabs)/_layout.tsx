@@ -31,25 +31,29 @@ export default function TabsLayout() {
         tabBarStyle: {
           backgroundColor: "#FFFFFF",
           borderColor: colors.border,
-          borderRadius: 26,
+          borderRadius: 22,
           borderTopWidth: 1,
           borderWidth: 1,
           bottom: 18,
-          height: 82,
-          left: 18,
+          height: 74,
+          left: 14,
           maxWidth: 430,
-          paddingBottom: 12,
-          paddingTop: 10,
+          paddingBottom: 8,
+          paddingTop: 8,
           position: "absolute",
-          right: 18,
+          right: 14,
           shadowColor: colors.primary,
           shadowOffset: { width: 0, height: 12 },
           shadowOpacity: 0.12,
           shadowRadius: 24
         },
+        tabBarItemStyle: {
+          minWidth: 0,
+          paddingHorizontal: 0
+        },
         tabBarLabelStyle: {
-          fontSize: 12,
-          fontWeight: "600"
+          fontSize: 10,
+          fontWeight: "800"
         }
       }}
     >
@@ -74,7 +78,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="plano"
         options={{
-          title: "Calendário",
+          title: "Ciclo",
           tabBarIcon: ({ color, focused, size }) => (
             <TabIcon color={String(color)} focused={focused} icon={CalendarDays} size={size} />
           )
@@ -83,7 +87,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="evolucao"
         options={{
-          title: "Análise",
+          title: "Analisar",
           tabBarIcon: ({ color, focused, size }) => (
             <TabIcon color={String(color)} focused={focused} icon={ChartLine} size={size} />
           )
@@ -92,7 +96,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="cuidado"
         options={{
-          title: "Conteúdo",
+          title: "Cuidar",
           tabBarIcon: ({ color, focused, size }) => (
             <TabIcon color={String(color)} focused={focused} icon={HeartPulse} size={size} />
           )
@@ -119,7 +123,7 @@ function TabIcon({
 
   return (
     <View style={styles.activeIcon}>
-      <Icon color="#FFFFFF" size={size} />
+      <Icon color={colors.primary} size={size} />
     </View>
   );
 }
@@ -133,11 +137,12 @@ const styles = StyleSheet.create({
   },
   activeIcon: {
     alignItems: "center",
-    backgroundColor: colors.primary,
-    borderRadius: 24,
-    height: 48,
+    backgroundColor: colors.lavender,
+    borderColor: colors.primary,
+    borderRadius: 18,
+    borderWidth: 1,
+    height: 38,
     justifyContent: "center",
-    marginTop: 8,
-    width: 48
+    width: 38
   }
 });

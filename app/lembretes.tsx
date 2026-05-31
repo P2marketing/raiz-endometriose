@@ -1,7 +1,7 @@
 import { router, useFocusEffect } from "expo-router";
 import { Bell, CalendarCheck, ChevronLeft, HeartPulse, LogOut, Pill, Send, ToggleLeft, ToggleRight } from "lucide-react-native";
 import { useCallback, useState } from "react";
-import { Alert, Pressable, StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 
 import { AppText } from "@/components/AppText";
 import { Card } from "@/components/Card";
@@ -16,6 +16,7 @@ import { colors, spacing } from "@/theme";
 export default function ReminderScreen() {
   const { signOut } = useAuth();
   const [reminders, setReminders] = useState<ReminderSettings>(defaultReminders);
+  const [feedback, setFeedback] = useState<string | null>(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -32,6 +33,7 @@ export default function ReminderScreen() {
   const update = async (next: ReminderSettings) => {
     setReminders(next);
     await saveReminderSettings(next);
+    setFeedback("Configuração salva. As notificações aparecem na tela Hoje e, quando permitido pelo navegador, também como aviso do sistema.");
   };
 
   const toggle = (key: keyof ReminderSettings) => {
@@ -43,11 +45,11 @@ export default function ReminderScreen() {
   const testNotification = async () => {
     const result = await showTestNotification(reminders);
     if (result === "granted") {
-      Alert.alert("Notificação enviada", "Se o navegador permitir, você verá uma notificação de teste do RAIZ.");
+      setFeedback("Notificação enviada. Se o navegador permitir, você verá um aviso de teste do RAIZ.");
     } else if (result === "denied") {
-      Alert.alert("Permissão bloqueada", "Ative notificações para este site nas configurações do navegador.");
+      setFeedback("Permissão bloqueada. Ative notificações para este site nas configurações do navegador.");
     } else {
-      Alert.alert("Indisponível neste navegador", "Este navegador não oferece notificações web neste modo.");
+      setFeedback("Este navegador não oferece notificações web neste modo. A central interna do app continua funcionando.");
     }
   };
 
@@ -66,10 +68,29 @@ export default function ReminderScreen() {
       <Card tone="soft">
         <View style={styles.cardTitle}>
           <Bell color={colors.primary} size={22} />
-          <AppText variant="subtitle">Resumo</AppText>
+          <AppText variant="subtitle">Como chegam os avisos</AppText>
+        </View>
+        <AppText color={colors.muted}>
+          O RAIZ mostra lembretes dentro da tela Hoje em cartões interativos. Se você permitir, o navegador também envia notificações fora do app.
+        </AppText>
+      </Card>
+
+      <Card tone="soft">
+        <View style={styles.cardTitle}>
+          <Bell color={colors.primary} size={22} />
+          <AppText variant="subtitle">Resumo ativo</AppText>
         </View>
         <AppText color={colors.muted}>{getReminderSummary(reminders)}</AppText>
       </Card>
+
+      {feedback ? (
+        <View style={styles.feedback}>
+          <AppText variant="label" color={colors.primary}>
+            Atualização
+          </AppText>
+          <AppText color={colors.muted}>{feedback}</AppText>
+        </View>
+      ) : null}
 
       <ReminderRow
         icon={Bell}
@@ -207,5 +228,13 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     justifyContent: "center",
     minHeight: 52
+  },
+  feedback: {
+    backgroundColor: "#FFF7FA",
+    borderColor: colors.border,
+    borderRadius: 18,
+    borderWidth: 1,
+    gap: spacing.xs,
+    padding: spacing.md
   }
 });
