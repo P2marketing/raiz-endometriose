@@ -41,6 +41,8 @@ create table if not exists public.doctor_reports (
   generated_at timestamptz not null default now()
 );
 
+create index if not exists doctor_reports_user_id_idx on public.doctor_reports (user_id);
+
 alter table public.profiles enable row level security;
 alter table public.daily_entries enable row level security;
 alter table public.reminder_settings enable row level security;
