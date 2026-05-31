@@ -66,8 +66,17 @@ export function AuthProvider({ children }: PropsWithChildren) {
             redirectTo: getAuthRedirectUrl()
           }
         });
-        if (error) return { error: error.message };
+        if (error) {
+          const context = "context" in error ? error.context : null;
+          if (context instanceof Response) {
+            const body = await context.json().catch(() => null);
+            if (body?.error) return { error: body.error };
+          }
+
+          return { error: error.message };
+        }
         if (data?.error) return { error: data.error };
+        if (!data?.ok) return { error: "Não foi possível criar a conta agora." };
 
         const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
         return signInError ? { error: signInError.message } : {};

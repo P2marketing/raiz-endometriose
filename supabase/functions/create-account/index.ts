@@ -59,6 +59,29 @@ Deno.serve(async (req: Request) => {
     }
   });
 
+  const existingUser = await findUserByEmail(admin, email);
+  if (existingUser?.email_confirmed_at) {
+    return json({ error: "Esse e-mail ja possui cadastro." });
+  }
+
+  if (existingUser) {
+    const { data, error } = await admin.auth.admin.updateUserById(existingUser.id, {
+      email_confirm: true,
+      password,
+      user_metadata: { name }
+    });
+
+    if (error) {
+      return json({ error: translateAdminError(error.message) });
+    }
+
+    if (data.user) {
+      await upsertProfile(admin, data.user.id, name);
+    }
+
+    return json({ ok: true });
+  }
+
   const { data, error } = await admin.auth.admin.createUser({
     email,
     email_confirm: true,
@@ -67,17 +90,11 @@ Deno.serve(async (req: Request) => {
   });
 
   if (error) {
-    return json({ error: translateAdminError(error.message) }, 400);
+    return json({ error: translateAdminError(error.message) });
   }
 
   if (data.user) {
-    await admin.from("profiles").upsert(
-      {
-        name,
-        user_id: data.user.id
-      },
-      { onConflict: "user_id" }
-    );
+    await upsertProfile(admin, data.user.id, name);
   }
 
   return json({ ok: true });
@@ -102,4 +119,22 @@ function translateAdminError(message: string) {
     return "E-mail invalido.";
   }
   return "Nao foi possivel criar a conta agora.";
+}
+
+async function findUserByEmail(admin: ReturnType<typeof createClient>, email: string) {
+  const { data, error } = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
+
+  if (error) return null;
+
+  return data.users.find((user) => user.email?.toLowerCase() === email) ?? null;
+}
+
+async function upsertProfile(admin: ReturnType<typeof createClient>, userId: string, name: string) {
+  await admin.from("profiles").upsert(
+    {
+      name,
+      user_id: userId
+    },
+    { onConflict: "user_id" }
+  );
 }
